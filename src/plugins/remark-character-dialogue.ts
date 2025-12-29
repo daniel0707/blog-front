@@ -14,49 +14,73 @@ function h(el: string, attrs: Properties = {}, children: any[] = []): P {
   }
 }
 
-const remarkCharacterDialogue: Plugin<[{ characters: Record<string, string> }], Root> =
-  (opts) => (tree) => {
-    // Type guard to check if a string is a valid character dialogue key
-    function isCharacterDialogue(s: string): s is keyof typeof opts.characters {
-      return opts.characters.hasOwnProperty(s) && opts.characters[s] !== undefined
+interface CharacterDialogueOptions {
+  // No options needed - all character images come from CMS URLs
+}
+
+const remarkCharacterDialogue: Plugin<[CharacterDialogueOptions?], Root> = (opts = {}) => (tree) => {
+  visit(tree, (node, index, parent) => {
+    if (!parent || index === undefined || node.type !== 'containerDirective') return
+
+    const characterName = node.name
+
+    // Get image URL from directive label (CMS syntax) or fall back to config (local markdown)
+    // CMS syntax: :::characterName[imageUrl]{align="left"}
+    // Local syntax: :::characterName{align="left"} (looks up URL from config)
+    let imageUrl: string | undefined
+    const directiveNode = node as any
+
+    // Check for URL in directive label: [url]
+    // remark-directive parses [label] as a paragraph with directiveLabel: true
+    const labelIndex = directiveNode.children?.findIndex(
+      (child: any) => child.type === 'paragraph' && child.data?.directiveLabel === true
+    )
+
+    if (labelIndex !== undefined && labelIndex !== -1) {
+      const labelParagraph = directiveNode.children[labelIndex]
+      // The label content might be a text node or a link node (if GFM auto-linked it)
+      const firstChild = labelParagraph.children?.[0]
+      if (firstChild?.type === 'text') {
+        imageUrl = firstChild.value
+      } else if (firstChild?.type === 'link') {
+        // GFM auto-linked the URL
+        imageUrl = firstChild.url
+      }
+      
+      if (imageUrl) {
+        // Remove the label paragraph so it doesn't appear in content
+        directiveNode.children.splice(labelIndex, 1)
+      }
     }
 
-    // Do nothing if no characters are defined
-    if (!opts.characters || Object.keys(opts.characters).length === 0) {
-      return
-    }
+    // Skip if we can't find an image URL (must come from CMS)
+    if (!imageUrl) return
 
-    visit(tree, (node, index, parent) => {
-      if (!parent || index === undefined || node.type !== 'containerDirective') return
+    const align = node.attributes?.align ?? null
+    const alignClass = align === 'left' || align === 'right' ? ` align-${align}` : ''
 
-      const characterName = node.name
-      if (!isCharacterDialogue(characterName)) return
+    // Do not change prefix to AD, ADM, or similar, adblocks will block the content inside.
+    const admonition = h(
+      'aside',
+      {
+        'aria-label': `Character dialogue: ${characterName}`,
+        class: 'character-dialogue' + alignClass,
+        'data-character': characterName,
+      },
+      [
+        h('img', {
+          class: 'character-dialogue-image',
+          alt: characterName,
+          loading: 'lazy',
+          src: imageUrl,
+          width: 100,
+        }),
+        h('div', { class: 'character-dialogue-content' }, directiveNode.children),
+      ],
+    )
 
-      const align = node.attributes?.align ?? null
-      const alignClass = align === 'left' || align === 'right' ? ` align-${align}` : ''
-
-      // Do not change prefix to AD, ADM, or similar, adblocks will block the content inside.
-      const admonition = h(
-        'aside',
-        {
-          'aria-label': `Character dialogue: ${characterName}`,
-          class: 'character-dialogue' + alignClass,
-          'data-character': characterName,
-        },
-        [
-          h('img', {
-            class: 'character-dialogue-image',
-            alt: characterName,
-            loading: 'lazy',
-            src: opts.characters[characterName],
-            width: 100,
-          }),
-          h('div', { class: 'character-dialogue-content' }, node.children),
-        ],
-      )
-
-      parent.children[index] = admonition
-    })
-  }
+    parent.children[index] = admonition
+  })
+}
 
 export default remarkCharacterDialogue

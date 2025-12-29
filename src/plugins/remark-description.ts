@@ -13,7 +13,8 @@ const remarkDescription: RemarkPlugin = (options?: { maxChars?: number }) => {
           if (
             child.type === 'paragraph' &&
             child.children.length > 0 &&
-            child.children[0].type !== 'image'
+            child.children[0].type !== 'image' &&
+            !('data' in child && child.data && 'directiveLabel' in child.data)
           ) {
             const s = toString(child).trim()
             if (s.length > 0) {

@@ -2,16 +2,17 @@ import type { SiteConfig } from '~/types'
 
 const config: SiteConfig = {
   // Absolute URL to the root of your published site, used for generating links and sitemaps.
-  site: 'https://multiterm.stelclementine.com',
+  // Automatically switches between dev and prod based on build mode
+  site: import.meta.env.PROD ? 'https://blog.vahla.fi' : 'https://blog-dev.vahla.fi',
   // The name of your site, used in the title and for SEO.
-  title: 'MultiTerm',
+  title: "Dan's Clever Corner",
   // The description of your site, used for SEO and RSS feed.
   description:
-    'A coder-ready Astro blog theme with 59 of your favorite color schemes to choose from',
+    "Comprehending Life's Undefined Behaviour",
   // The author of the site, used in the footer, SEO, and RSS feed.
-  author: 'Katy Kookaburra',
+  author: 'Daniel Vahla',
   // Keywords for SEO, used in the meta tags.
-  tags: ['Astro', 'Terminal', 'Theme', 'MultiTerm', 'stelcodes'],
+  tags: ['Programming', 'Software Development', 'Tech Blog', 'Daniel Vahla', 'Cloud Development', 'AWS', 'CloudFlare', 'Food blog', 'Life', 'Deep thoughts'],
   // Path to the image used for generating social media previews.
   // Needs to be a square JPEG file due to limitations of the social card generator.
   // Try https://squoosh.app/ to easily convert images to JPEG.
@@ -37,13 +38,8 @@ const config: SiteConfig = {
       url: '/about',
     },
     {
-      name: 'Archive',
+      name: 'Posts',
       url: '/posts',
-    },
-    {
-      name: 'GitHub',
-      url: 'https://github.com/stelcodes/multiterm-astro',
-      external: true,
     },
   ],
   // The theming configuration for the site.
@@ -151,12 +147,12 @@ const config: SiteConfig = {
   },
   // Social links to display in the footer.
   socialLinks: {
-    github: 'https://github.com/stelcodes/multiterm-astro',
-    mastodon: 'https://github.com/stelcodes/multiterm-astro',
-    email: 'https://github.com/stelcodes/multiterm-astro',
-    linkedin: 'https://github.com/stelcodes/multiterm-astro',
-    bluesky: 'https://github.com/stelcodes/multiterm-astro',
-    twitter: 'https://github.com/stelcodes/multiterm-astro',
+    // github: undefined, // Removed - not pointing to GitHub
+    // mastodon: undefined,
+    email: 'mailto:daniel+blog@vahla.fi',
+    linkedin: 'https://www.linkedin.com/in/daniel-vahla',
+    // bluesky: undefined,
+    // twitter: undefined,
     rss: true, // Set to true to include an RSS feed link in the footer
   },
   // Configuration for Giscus comments.
@@ -172,15 +168,7 @@ const config: SiteConfig = {
     categoryId: 'DIC_kwDOPNnBis4CteOc',
     reactionsEnabled: true, // Enable reactions on post itself
   },
-  // These are characters available for the character chat feature.
-  // To add your own character, add an image file to the top-level `/public` directory
-  // Make sure to compress the image to a web-friendly size (<100kb)
-  // Try using the excellent https://squoosh.app web app for creating small webp files
-  characters: {
-    owl: '/owl.webp',
-    unicorn: '/unicorn.webp',
-    duck: '/duck.webp',
-  },
+
 }
 
 export default config
