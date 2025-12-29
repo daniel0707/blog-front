@@ -1,8 +1,7 @@
 ---
 avatarImage:
   src: './avatar.jpg'
-  alt: 'My avatar'
-githubCalendar: 'stelcodes'
+  alt: 'Daniel Vahla'
 ---
 
-Welcome to the example site. This site is meant to show off my custom Astro theme/template **MultiTerm** which creates a coder-ready blog complete with an interactive theme changer, RSS, sitemap, tagging, and markdown extensions.
+Welcome to **Dan's Clever Corner** - a space where I explore programming, cloud development, food, life, and deep thought rants. Join me as I document my journey through the complexities of software development, enjoying food and describing it to the best of my ability, and talking about life in general.

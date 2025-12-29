@@ -162,10 +162,10 @@ const config: SiteConfig = {
   // IMPORTANT: Update giscus.json in the root of the project with your own website URL
   // If you don't want to use Giscus, set this to undefined.
   giscus: {
-    repo: 'stelcodes/multiterm-astro',
-    repoId: 'R_kgDOPNnBig',
-    category: 'Giscus',
-    categoryId: 'DIC_kwDOPNnBis4CteOc',
+    repo: 'daniel0707/blog-front',
+    repoId: 'R_kgDOQwr8Ww',
+    category: 'General',
+    categoryId: 'DIC_kwDOQwr8W84C0W3D',
     reactionsEnabled: true, // Enable reactions on post itself
   },
 

@@ -62,7 +62,6 @@ const homeCollection = defineCollection({
           alt: z.string().optional().default('My avatar'),
         })
         .optional(),
-      githubCalendar: z.string().optional(), // GitHub username for calendar
     }),
 })
 
