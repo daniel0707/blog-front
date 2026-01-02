@@ -22,11 +22,11 @@
     "@fontsource-variable/jetbrains-mono": "^5.2.6",
     "@pagefind/default-ui": "^1.4.0",
     "@resvg/resvg-js": "^2.6.2",
-    "@tailwindcss/vite": "^4.1.13",
+    "@tailwindcss/vite": "^4.1.18",
     "@types/hast": "^3.0.4",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
-    "astro": "^5.13.5",
+    "astro": "^5.16.6",
     "astro-expressive-code": "^0.41.3",
     "color": "^5.0.0",
     "date-fns": "^4.1.0",
@@ -48,9 +48,10 @@
     "sanitize-html": "^2.17.0",
     "satori": "^0.18.2",
     "satori-html": "^0.3.2",
-    "tailwindcss": "^4.1.13",
+    "tailwindcss": "^4.1.18",
     "typescript": "^5.9.2",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "vite": "^6.4.1"
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",

@@ -98,7 +98,7 @@ a.button {
 
 header button,
 header input {
-  @apply !outline-none;
+  @apply outline-none!;
 }
 
 button {

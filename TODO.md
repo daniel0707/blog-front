@@ -16,20 +16,20 @@ Integrate WebinyCMS as the content source for this Astro blog starter, replacing
   - More flexibility in post composition than single-body markdown
 
 ### 1.1.5 Review and Adjust Site Configuration
-- [ ] Review `src/site.config.ts` and update all values for the actual blog
-  - [ ] Update `site` URL (currently points to multiterm.stelclementine.com)
-  - [ ] Update `title` (currently "MultiTerm")
-  - [ ] Update `description` (currently describes Astro theme, not your blog)
-  - [ ] Update `author` (currently "Katy Kookaburra")
-  - [ ] Update `tags` for SEO (currently theme-related tags)
-  - [ ] Replace `socialCardAvatarImage` with actual avatar
-  - [ ] Review and adjust `pageSize` (currently 6)
-  - [ ] Update `navLinks` (add/remove/modify navigation items)
-  - [ ] Configure `themes.mode` and `themes.default` preference
-  - [ ] Consider reducing `themes.include` array (currently 59 themes - may be overkill)
-  - [ ] Update all `socialLinks` (currently all point to multiterm-astro repo)
-  - [ ] Configure `giscus` for your own repository or disable
-  - [ ] Review `characters` for character chat feature (owl, unicorn, duck)
+- [x] Review `src/site.config.ts` and update all values for the actual blog
+  - [x] Update `site` URL (now uses environment-based: blog.vahla.fi / blog-dev.vahla.fi)
+  - [x] Update `title` (now "Dan's Clever Corner")
+  - [x] Update `description` (now "Comprehending Life's Undefined Behaviour")
+  - [x] Update `author` (now "Daniel Vahla")
+  - [x] Update `tags` for SEO (now includes Programming, Cloud, Food, Life topics)
+  - [ ] Replace `socialCardAvatarImage` with actual avatar (still using placeholder avatar.jpg)
+  - [x] Review and adjust `pageSize` (kept at 6)
+  - [x] Update `navLinks` (removed GitHub, renamed Archive to Posts)
+  - [x] Configure `themes.mode` and `themes.default` (mode: select, default: catppuccin-mocha)
+  - [x] Consider reducing `themes.include` array (kept all 59 themes)
+  - [x] Update all `socialLinks` (removed most, kept email and LinkedIn)
+  - [x] Configure `giscus` for your own repository (daniel0707/blog-front, General category)
+  - [x] Review `characters` for character chat feature (removed from config, now CMS-only)
 
 ### 1.2 Content Model Design Decisions
 

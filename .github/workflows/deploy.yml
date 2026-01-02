@@ -1,0 +1,55 @@
+name: Build and Deploy to Cloudflare Pages
+
+on:
+  # Triggered by Cloudflare Workflow after AI processing
+  repository_dispatch:
+    types: [webiny-publish]
+  
+  # Allow manual trigger for testing/emergency deploys
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - development
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build site
+        env:
+          WEBINY_GRAPHQL_ENDPOINT: ${{ secrets.WEBINY_GRAPHQL_ENDPOINT }}
+          WEBINY_API_TOKEN: ${{ secrets.WEBINY_API_TOKEN }}
+        run: npm run build
+      
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=dans-clever-corner --branch=main
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Build or deployment failed!"
+          echo "Entry ID: ${{ github.event.client_payload.entry_id }}"
+          # TODO: Add email notification here via API call
