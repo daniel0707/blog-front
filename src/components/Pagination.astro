@@ -18,7 +18,7 @@ const { prevLink, prevText, nextLink, nextText } = Astro.props
       <a
         href={prevLink}
         aria-label="Previous Page"
-        class="button flex-row items-center justify-center w-full !pr-3.5 sm:w-min"
+        class="button flex-row items-center justify-center w-full pr-3.5! sm:w-min"
       >
         <IconChevronsLeft class="mr-2 text-xl size-5" />
         {prevText || 'Previous'}
@@ -31,7 +31,7 @@ const { prevLink, prevText, nextLink, nextText } = Astro.props
         href={nextLink}
         aria-label="Next Page"
         class:list={[
-          'button flex-row items-center justify-center w-full !pl-3.5 sm:w-min',
+          'button flex-row items-center justify-center w-full pl-3.5! sm:w-min',
           prevLink && 'ml-auto',
         ]}
       >

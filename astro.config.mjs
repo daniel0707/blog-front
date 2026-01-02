@@ -17,8 +17,6 @@ import rehypeUnwrapImages from 'rehype-unwrap-images'
 import { remarkAdmonitions } from './src/plugins/remark-admonitions' /* Add admonitions */
 import remarkCharacterDialogue from './src/plugins/remark-character-dialogue' /* Custom plugin to handle character admonitions */
 import remarkUnknownDirectives from './src/plugins/remark-unknown-directives' /* Custom plugin to handle unknown admonitions */
-import remarkMath from 'remark-math' /* for latex math support */
-import rehypeKatex from 'rehype-katex' /* again, for latex math support */
 import remarkGemoji from './src/plugins/remark-gemoji' /* for shortcode emoji support */
 import rehypePixelated from './src/plugins/rehype-pixelated' /* Custom plugin to handle pixelated images */
 
@@ -35,7 +33,6 @@ export default defineConfig({
       remarkAdmonitions,
       remarkCharacterDialogue,
       remarkUnknownDirectives,
-      remarkMath,
       remarkGemoji,
     ],
     rehypePlugins: [
@@ -51,7 +48,6 @@ export default defineConfig({
       ],
       rehypeUnwrapImages,
       rehypePixelated,
-      rehypeKatex,
     ],
   },
   image: {
