@@ -1,0 +1,40 @@
+---
+import Layout from '~/layouts/Layout.astro'
+import PageHeader from '~/components/PageHeader.astro'
+import { fetchAuthors } from '~/utils/authors'
+
+const authors = await fetchAuthors()
+---
+
+<Layout title="About" description="Meet the authors behind Dan's Clever Corner">
+  <div class="mt-2 sm:mt-0">
+    <PageHeader titlePieces={['about']} />
+    
+    <div class="space-y-8 mt-8">
+      {authors.map((author) => (
+        <div class="my-6 md:mx-2">
+          <div class="flex flex-col sm:flex-row items-center justify-around sm:gap-5 max-w-full mb-6">
+            {author.authorPicture && (
+              <img
+                src={author.authorPicture}
+                alt={author.authorName}
+                class="rounded-full border-8 border-accent/15 size-36 aspect-square box-content shrink-0 object-cover"
+                width="144"
+                height="144"
+                loading="lazy"
+              />
+            )}
+            <div>
+              <div class="m-4 max-w-full prose">
+                <h2 class="text-2xl font-semibold text-heading2 mb-3">{author.authorName}</h2>
+                {author.authorBio && (
+                  <div set:html={author.authorBio} />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</Layout>

@@ -22,9 +22,9 @@ interface WebinyPost {
   postWrittenDateTime: string | null
   postEditedDateTime: string | null
   postTags: string[] | null
-  postDefaultAuthor: { authorName: string } | null
+  postAuthor: { authorName: string } | null
+  postSeries: string | null
   postSections: WebinyPostSection[] | null
-  // postSeries: string | null  // TODO: Add this field to Webiny schema
 }
 
 interface WebinyListResponse {
@@ -50,9 +50,10 @@ const LIST_POSTS_QUERY = `
         postWrittenDateTime
         postEditedDateTime
         postTags
-        postDefaultAuthor {
+        postAuthor {
           authorName
         }
+        postSeries
         postSections {
           postSectionContent(format: "markdown")
           postSectionImage
@@ -229,14 +230,13 @@ async function transformPost(
     data.updated = new Date(post.postEditedDateTime)
   }
 
-  if (post.postDefaultAuthor?.authorName) {
-    data.author = post.postDefaultAuthor.authorName
+  if (post.postAuthor?.authorName) {
+    data.author = post.postAuthor.authorName
   }
 
-  // TODO: Add postSeries field to Webiny schema
-  // if (post.postSeries) {
-  //   data.series = post.postSeries
-  // }
+  if (post.postSeries) {
+    data.series = post.postSeries
+  }
 
   // SEO fields (for use in layouts)
   if (post.postSeoHeadline) {
