@@ -1,6 +1,6 @@
 # Webiny CMS Integration - Content Publish Hook
 
-This file needs to be added to your Webiny CMS repository to trigger the AI content pipeline.
+This file needs to be added to your Webiny CMS repository to trigger the AI content pipeline via AWS Step Functions.
 
 ## File Location
 `apps/api/graphql/src/plugins/contentPublishHook.ts`
@@ -9,6 +9,9 @@ This file needs to be added to your Webiny CMS repository to trigger the AI cont
 
 ```typescript
 import { ContextPlugin } from "@webiny/api-serverless-cms";
+import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
+
+const sfnClient = new SFNClient({ region: process.env.AWS_REGION || "us-east-1" });
 
 export default new ContextPlugin(async (context) => {
   // Hook into content lifecycle
@@ -27,34 +30,32 @@ export default new ContextPlugin(async (context) => {
         title: entry.values.postHeadline || "",
         description: entry.values.postDescription || "",
         content: extractContentText(entry.values.postSections),
-        environment: process.env.WEBINY_ENV || "production",
+        environment: process.env.WEBINY_ENV || "prod",
         publishedAt: new Date().toISOString(),
       };
 
-      // Determine workflow URL based on environment
-      const workflowUrl =
+      // Determine Step Function ARN based on environment
+      const stepFunctionArn =
         process.env.WEBINY_ENV === "dev"
-          ? "https://workflow-dev.vahla.dev/publish"
-          : "https://workflow.vahla.dev/publish";
+          ? process.env.STEP_FUNCTION_ARN_DEV
+          : process.env.STEP_FUNCTION_ARN_PROD;
 
-      // Call Cloudflare Workflow
-      const response = await fetch(workflowUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.WORKFLOW_SECRET_TOKEN}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Workflow trigger failed: ${response.status} ${response.statusText}`
-        );
+      if (!stepFunctionArn) {
+        throw new Error("Step Function ARN not configured");
       }
 
+      // Start Step Function execution
+      const command = new StartExecutionCommand({
+        stateMachineArn: stepFunctionArn,
+        input: JSON.stringify(payload),
+        name: `post-${entry.id}-${Date.now()}`, // Unique execution name
+      });
+
+      const response = await sfnClient.send(command);
+
       console.log(
-        `Successfully triggered AI pipeline for entry: ${entry.id}`
+        `Successfully triggered AI pipeline for entry: ${entry.id}`,
+        `Execution ARN: ${response.executionArn}`
       );
     } catch (error) {
       console.error("Failed to trigger AI pipeline:", error);
@@ -97,41 +98,106 @@ export const handler = createHandler({
 });
 ```
 
-## Environment Variables
+## Required Dependencies
 
-Add to your Webiny `.env` files:
+Add to `package.json`:
 
 ```bash
-# Development
-WEBINY_ENV=dev
-WORKFLOW_SECRET_TOKEN=your-secret-token-here
+npm install @aws-sdk/client-sfn
+```
 
-# Production
-WEBINY_ENV=production
-WORKFLOW_SECRET_TOKEN=your-secret-token-here
+## Environment Variables
+
+Add to Webiny `.env` file:
+
+```bash
+# Environment identifier
+WEBINY_ENV=dev  # or "prod"
+
+# AWS Step Function ARNs
+STEP_FUNCTION_ARN_DEV=arn:aws:states:us-east-1:123456789:stateMachine:blog-ai-pipeline-dev
+STEP_FUNCTION_ARN_PROD=arn:aws:states:us-east-1:123456789:stateMachine:blog-ai-pipeline-prod
+
+# AWS Region (optional, defaults to us-east-1)
+AWS_REGION=us-east-1
+```
+
+## IAM Permissions
+
+Ensure the Webiny Lambda execution role has permission to start Step Functions:
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "states:StartExecution"
+      ],
+      "Resource": [
+        "arn:aws:states:us-east-1:123456789:stateMachine:blog-ai-pipeline-dev",
+        "arn:aws:states:us-east-1:123456789:stateMachine:blog-ai-pipeline-prod"
+      ]
+    }
+  ]
+}
+```
+
+## Deployment
+
+After making changes:
+
+```bash
+yarn webiny deploy api --env <environment>
 ```
 
 ## Testing
 
-After deploying the hook:
+### 1. Check CloudWatch Logs
 
-1. Publish a test post in Webiny CMS
-2. Check CloudWatch logs for:
-   - "Content published: <entry-id>"
-   - "Successfully triggered AI pipeline for entry: <entry-id>"
-3. Verify Cloudflare Workflow receives the payload
-4. Monitor GitHub Actions for triggered build
+After publishing content, check Lambda logs:
+- AWS Console → CloudWatch → Log Groups → `/aws/lambda/webiny-api-graphql`
+- Look for: "Successfully triggered AI pipeline for entry: ..."
 
-## Error Handling
+### 2. Verify Step Function Execution
 
-The hook is designed to be **non-blocking**:
-- If the Workflow call fails, content is still published
-- Errors are logged to CloudWatch
-- Content can be manually republished to retry the pipeline
+- AWS Console → Step Functions → State machines
+- Select your state machine (blog-ai-pipeline-dev or prod)
+- Check "Executions" tab for recent runs
+- Click execution to see detailed step-by-step progress
 
-## Security
+### 3. Verify GitHub Actions Trigger
 
-- Use `WORKFLOW_SECRET_TOKEN` to authenticate requests
-- Validate token in Cloudflare Workflow
-- Use HTTPS for all communication
-- Don't expose sensitive data in logs
+After Step Function completes:
+- GitHub → Actions tab
+- Look for workflow run triggered by `repository_dispatch`
+- Check build logs and deployment status
+
+## Troubleshooting
+
+### Hook Not Firing
+- Check that plugin is registered in `index.ts`
+- Verify `modelId === "post"` matches your content model
+- Check CloudWatch logs for Lambda errors
+
+### Step Function Not Starting
+- Verify ARN is correct in `.env`
+- Check IAM permissions on Lambda execution role
+- Verify AWS SDK client configuration
+
+### Execution Fails
+- Check Step Function execution in AWS Console
+- Review CloudWatch logs for each Lambda step
+- Common issues:
+  - Bedrock model not enabled in region
+  - Missing IAM permissions
+  - Invalid payload format
+  - API rate limits
+
+## Notes
+
+- Hook is non-blocking - content publishes even if Step Function fails
+- Each execution has unique name to prevent duplicates
+- Can manually republish content to retry pipeline
+- Step Function ARN must be created before deploying hook

@@ -18,8 +18,16 @@ const webinyPostsCollection = defineCollection({
       .object({
         src: z.string(), // Remote URL from Webiny
         alt: z.string(),
-        width: z.number().default(1200), // Standard social media card width
-        height: z.number().default(630), // Standard social media card height
+        width: z.number().default(1440), // Wide banner for post hero
+        height: z.number().default(480), // 3:1 aspect ratio
+      })
+      .optional(),
+    cardImage: z
+      .object({
+        src: z.string(), // Remote URL from Webiny
+        alt: z.string(),
+        width: z.number().default(320), // Square for listing cards
+        height: z.number().default(320), // 1:1 aspect ratio
       })
       .optional(),
     toc: z.boolean().optional().default(true),

@@ -1,176 +1,241 @@
-# Deployment Guide
+# Deployment Architecture
+
+This document describes the complete deployment pipeline for Dan's Clever Corner blog, including AI-powered content enhancement.
 
 ## Overview
 
-This document outlines the deployment strategy for Dan's Clever Corner blog, including hosting setup, build configuration, and automated workflows.
+The blog uses a sophisticated multi-stage pipeline that automatically enriches content with AI-generated summaries and hero images before deploying to production.
 
-## Architecture
+### Architecture Components
 
-- **Frontend**: Static site generated with Astro
-- **CMS**: Webiny Headless CMS
-- **Hosting**: [TO BE FILLED]
-- **Build Trigger**: [TO BE FILLED]
+1. **Webiny CMS** (AWS Lambda) - Headless CMS for content management
+2. **AWS Step Functions** - AI content enhancement orchestrator
+3. **AWS Bedrock** - LLM (Claude/Llama) for summarization, Titan for image generation
+4. **GitHub Actions** - Build automation and deployment
+5. **Cloudflare Pages** - Static site hosting with global CDN
+
+### Content Flow
+
+```
+Content Author (You)
+    ↓ (writes post)
+Webiny CMS
+    ↓ (clicks Publish)
+onEntryAfterPublish Hook
+    ↓ (invokes Step Function)
+AWS Step Functions
+    ↓ (orchestrates AI pipeline)
+├─ Step 1: Bedrock LLM (summarization) [FREE with credits]
+├─ Step 2: Generate image prompt from summary
+├─ Step 3: Bedrock Titan (image generation) [$0.01/image]
+├─ Step 4: Upload image to Webiny File Manager
+├─ Step 5: Update CMS entry with summary + image
+└─ Step 6: Trigger GitHub Actions (repository_dispatch)
+    ↓
+GitHub Actions Workflow
+├─ Checkout code
+├─ Install dependencies
+├─ Build static site (fetches enriched content from CMS)
+└─ Deploy to Cloudflare Pages
+    ↓
+Live Blog (blog.vahla.fi or blog-dev.vahla.fi)
+```
+
+### Cost Per Post
+- LLM summarization: **$0.00** (AWS credits)
+- Image generation: **$0.01** (Titan @ 1024×1024)
+- **Total: ~$0.01 per blog post**
+
+## Detailed Pipeline Steps
+
+### 1. Content Creation & Publishing
+- Author writes blog post in Webiny CMS
+- Content includes: title, description, markdown sections
+- Click "Publish" button
+
+### 2. Webiny Hook Trigger
+**File**: `apps/api/graphql/src/plugins/contentPublishHook.ts` (in Webiny CMS repo)
+- Hook fires on `onEntryAfterPublish` event
+- Extracts content: title, description, sections (markdown)
+- Invokes AWS Step Function with payload
+- Returns immediately (non-blocking)
+
+### 3. AWS Step Functions Orchestration
+
+#### Step 3.1: LLM Summarization
+- **Service**: AWS Bedrock (Claude 3 or Llama 3)
+- **Input**: Full blog post content
+- **Output**: 2-3 sentence summary
+- **Cost**: $0.00 (covered by AWS credits)
+- **Duration**: ~5-10 seconds
+
+#### Step 3.2: Image Prompt Generation
+- **Method**: Prompt engineering or light LLM call
+- **Input**: Title + summary
+- **Output**: Detailed image generation prompt
+- **Example**: "A modern minimalist illustration of [topic], featuring [key concepts], in a tech blog style with vibrant colors"
+
+#### Step 3.3: Image Generation
+- **Service**: AWS Bedrock Titan Image Generator
+- **Input**: Image prompt
+- **Output**: 1024×1024 PNG image
+- **Cost**: $0.01 per image
+- **Duration**: ~10-20 seconds
+- **Output**: Temporary S3 URL or base64 data
+
+#### Step 3.4: Upload to Webiny File Manager
+- **Method**: Fetch image binary → Upload via Webiny GraphQL/REST API
+- **Storage**: Webiny File Manager (S3-backed)
+- **Output**: Permanent file ID and URL
+
+#### Step 3.5: Update CMS Entry
+- **Method**: GraphQL mutation to update post entry
+- **Fields Updated**:
+  - `postSummary` (generated summary text)
+  - `postHeroImage` (file reference ID)
+- **Result**: Enriched content ready for build
+
+#### Step 3.6: Trigger GitHub Actions
+- **Method**: POST to GitHub API
+- **Endpoint**: `https://api.github.com/repos/daniel0707/blog-front/dispatches`
+- **Payload**:
+  ```json
+  {
+    "event_type": "webiny-publish",
+    "client_payload": {
+      "entry_id": "post-id-123",
+      "environment": "dev" | "prod"
+    }
+  }
+  ```
+- **Authentication**: GitHub Personal Access Token with `repo` scope
+
+### 4. GitHub Actions Build
+**File**: `.github/workflows/deploy.yml`
+
+#### Triggers
+- `repository_dispatch` with type `webiny-publish` (automated)
+- `workflow_dispatch` (manual deployment)
+
+#### Steps
+1. **Checkout repository** - Fetch latest code
+2. **Setup Node.js 22** - With npm cache
+3. **Install dependencies** - `npm ci`
+4. **Build static site** - `npm run build`
+   - Fetches enriched content from Webiny GraphQL API
+   - Generates static pages with AI-generated summaries + hero images
+5. **Deploy to Cloudflare Pages** - Via Wrangler CLI
+   - Project name determined by environment variable
+   - `dev` → `dans-clever-corner-dev` → blog-dev.vahla.fi
+   - `prod` → `dans-clever-corner` → blog.vahla.fi
+
+### 5. Cloudflare Pages Deployment
+- Global CDN distribution
+- Automatic HTTPS
+- Instant rollback capability
+- Analytics and monitoring
 
 ## Environment Configuration
 
-### Development Environment
-- URL: `https://blog-dev.vahla.fi`
-- CMS Endpoint: `https://cms-api-dev.vahla.fi/cms/read/en-US`
-- Environment File: `.env`
+### Development Environment (`dev`)
+- **CMS**: https://cms-api-dev.vahla.fi
+- **Step Function**: `blog-ai-pipeline-dev` (AWS)
+- **Website**: https://blog-dev.vahla.fi
+- **GitHub Environment**: `dev`
 
-### Production Environment
-- URL: `https://blog.vahla.fi`
-- CMS Endpoint: `https://cms-api.vahla.fi/cms/read/en-US`
-- Environment File: `.env.production`
+### Production Environment (`prod`)
+- **CMS**: https://cms-api.vahla.fi
+- **Step Function**: `blog-ai-pipeline-prod` (AWS)
+- **Website**: https://blog.vahla.fi
+- **GitHub Environment**: `prod`
 
-## Required Environment Variables
+## Error Handling
 
-```bash
-WEBINY_GRAPHQL_ENDPOINT=https://cms-api.vahla.fi/cms/read/en-US
-WEBINY_API_TOKEN=your_token_here
-```
+### Webiny Hook Failures
+- Hook uses try/catch - errors logged but don't block publish
+- Content publishes successfully even if Step Function invocation fails
+- Can manually republish to retry AI pipeline
 
-## Build Process
+### Step Functions Failures
+- Each step has retry logic (3 attempts with exponential backoff)
+- Failures logged to CloudWatch
+- Email notifications sent via SNS (configured in Step Function)
+- Manual intervention: Check CloudWatch logs, fix issue, manually trigger Step Function
 
-### Local Build
-```bash
-npm run build
-```
+### Build Failures
+- GitHub Actions automatically emails on failure
+- Logs available in Actions tab
+- Can manually re-run workflow
+- Previous deployment remains live (no downtime)
 
-### Preview Build
-```bash
-npm run preview
-```
-
-## Deployment Strategy
-
-### Hosting Platform
-**Cloudflare Pages** - Global CDN with automatic HTTPS, edge deployment, and preview environments.
-
-### Build Configuration
-
-#### GitHub Actions Workflow
-- **Trigger**: `repository_dispatch` event from Cloudflare Workflow
-- **Build Command**: `npm run build`
-- **Output Directory**: `dist/`
-- **Node Version**: 20.x
-- **Deploy Tool**: Wrangler CLI
-
-#### Build Environment Variables (GitHub Secrets)
-```bash
-WEBINY_GRAPHQL_ENDPOINT  # CMS API endpoint
-WEBINY_API_TOKEN         # CMS authentication token
-CLOUDFLARE_API_TOKEN     # For Wrangler deployment
-CLOUDFLARE_ACCOUNT_ID    # Your CF account ID
-```
-
-### Automated Builds
-
-#### Pipeline Flow
-1. **Content Published** → Webiny CMS fires `onEntryAfterPublish` hook
-2. **Cloudflare Workflow** → Processes AI tasks:
-   - Generate summary via LLM
-   - Create Flux V2 prompt
-   - Generate hero image
-   - Upload image to Webiny File Manager
-   - Update CMS entry with image + summary
-3. **Trigger GitHub** → Workflow calls `repository_dispatch` API
-4. **GitHub Action Runs** → Builds static site with enriched content
-5. **Deploy to Cloudflare Pages** → Wrangler pushes artifacts
-
-### Webhooks
-
-#### Webiny Hook (CMS Repo)
-**File**: `apps/api/graphql/src/plugins/contentPublishHook.ts`
-
-Fires POST request to Cloudflare Workflow URL on content publish:
-```typescript
-POST https://workflow.vahla.dev/publish
-Body: { entryId, title, content, environment }
-```
-
-#### GitHub Repository Dispatch (Workflow)
-**Endpoint**: `https://api.github.com/repos/daniel0707/blog-front/dispatches`
-
-Triggered after AI processing completes:
-```bash
-POST /repos/daniel0707/blog-front/dispatches
-Headers: 
-  Authorization: token <GITHUB_PAT>
-  Accept: application/vnd.github.v3+json
-Body: 
-  { "event_type": "webiny-publish", "client_payload": { "entry_id": "..." } }
-```
-
-### Error Handling
-
-At each step, if failure occurs:
-1. **Log error** to Cloudflare Analytics
-2. **Send email notification** via Cloudflare Email Routing to `daniel+blog-deploy@vahla.fi`
-3. **Abort pipeline** - Do not trigger build with incomplete data
-
-### Deployment Environments
-
-| Environment | Branch | Workflow URL | CMS Endpoint |
-|-------------|--------|--------------|--------------|
-| Development | `main` | `workflow-dev.vahla.dev` | `cms-api-dev.vahla.fi` |
-| Production | `main` | `workflow.vahla.dev` | `cms-api.vahla.fi` |
-
-## DNS Configuration
-
-- `blog.vahla.fi` → Production site
-- `blog-dev.vahla.fi` → Development/staging site
+### Rollback Procedures
+1. **Cloudflare Pages rollback**: Dashboard → Deployments → Select previous → Rollback
+2. **Manual redeploy**: Actions → Run workflow → Select environment
+3. **Emergency**: Use Wrangler CLI locally: `wrangler pages deploy dist --project-name=dans-clever-corner`
 
 ## Monitoring & Maintenance
 
 ### Build Monitoring
-- **GitHub Actions**: Monitor workflow runs at `https://github.com/daniel0707/blog-front/actions`
-- **Cloudflare Analytics**: Track Workflow execution times and success rates
-- **Email Alerts**: Receive notifications on failure
+- **GitHub Actions**: Email notifications on failure
+- **Cloudflare Dashboard**: Build logs and deployment history
+- **Target**: Build time < 2 minutes
 
-### Performance Metrics
-- **Build Time**: Target < 2 minutes
-- **AI Processing**: Target < 60 seconds (LLM + Flux combined)
-- **Total Pipeline**: Target < 3 minutes from publish to live
+### AI Processing Metrics
+- **CloudWatch Logs**: Step Function execution logs
+- **CloudWatch Metrics**: Custom metrics for:
+  - LLM response time
+  - Image generation time
+  - Total pipeline duration
+  - Success/failure rates
+- **Target**: Total AI processing < 60 seconds
 
-### Logs
-- **Workflow Logs**: Cloudflare Dashboard → Workers → Workflows
-- **Build Logs**: GitHub Actions tab
-- **Deploy Logs**: Cloudflare Pages dashboard
+### Cost Monitoring
+- **AWS Cost Explorer**: Track Bedrock usage
+- **Budget Alerts**: Set at $10/month threshold
+- **Expected**: ~$0.30-1.00/month (30-100 posts)
 
-## Rollback Strategy
+## Security
 
-### Automatic Rollback
-Cloudflare Pages maintains deployment history. Rollback via:
-1. Cloudflare Dashboard → Pages → Deployments
-2. Select previous successful deployment
-3. Click "Rollback to this deployment"
+### Secrets Management
+- **GitHub Secrets**: Environment-specific (dev/prod)
+  - `WEBINY_GRAPHQL_ENDPOINT`
+  - `WEBINY_API_TOKEN`
+  - `CLOUDFLARE_API_TOKEN`
+  - `CLOUDFLARE_ACCOUNT_ID`
+- **AWS Secrets Manager**: Step Function credentials
+  - GitHub PAT (for repository_dispatch)
+  - Webiny API tokens
+- **Webiny .env**: Step Function ARN and auth token
 
-### Manual Rollback
-If content issue detected:
-1. Edit content in Webiny CMS
-2. Re-publish to trigger new build
-3. Or: Manually trigger GitHub Action with `workflow_dispatch`
+### IAM Permissions
+- Webiny Lambda → Step Functions: `states:StartExecution`
+- Step Functions → Bedrock: `bedrock:InvokeModel`
+- Step Functions → S3: `s3:PutObject`, `s3:GetObject`
+- Step Functions → Webiny API: Via API token (no AWS IAM)
+- Step Functions → GitHub API: Via PAT
 
-### Emergency Rollback
-If critical issue:
-```bash
-# Redeploy previous build
-wrangler pages deploy dist/ --project-name=dans-clever-corner --branch=main
-```
+## Repository Structure
 
-## Notes
+This deployment setup spans three repositories:
 
-- Blog content is fetched at build time, not runtime
-- New posts require triggering a rebuild
-- Consider build caching strategies for faster deployments
+1. **blog-front** (this repo)
+   - Astro frontend code
+   - GitHub Actions workflow
+   - Deployment documentation
 
+2. **cms** (Webiny repository)
+   - CMS configuration
+   - Content publish hook
+   - Webiny deployment (Lambda/API Gateway)
 
+3. **blog-ai-pipeline** (separate AWS project)
+   - Step Functions definition (ASL JSON)
+   - Lambda functions for each step
+   - Infrastructure as Code (CDK/Terraform)
 
+## Setup Instructions
 
-
-
-------
+See `docs/SETUP_CHECKLIST.md` for detailed step-by-step setup guide.
 🚀 Finalized AI Content Pipeline Plan
 This architecture decouples the user experience from the long-running AI tasks, utilizing Cloudflare Workflows as the reliable orchestrator.
 📝 Pipeline Overview
