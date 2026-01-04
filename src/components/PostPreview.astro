@@ -1,5 +1,6 @@
 ---
 import IconChevronsRight from '~/icons/chevrons-right.svg'
+import { Image } from 'astro:assets'
 import type { CollectionEntry } from 'astro:content'
 import { render } from 'astro:content'
 import Tags from '~/components/Tags.astro'
@@ -22,25 +23,49 @@ if (post.data.tags && post.data.tags.length > 0) {
 }
 const samePage = Astro.url.pathname === `/posts/${post.id}`
 const articleLink = samePage ? `#${post.id}` : `/posts/${post.id}`
+const postData = post.data as any
 ---
 
 <article class="w-full py-5 my-1 md:my-4 border-accent/10">
-  <h1 class="mb-3 text-2xl text-heading1 font-semibold">
-    <a href={articleLink}>{post.data.title}</a>
-  </h1>
-  <PostInfo post={post} class="mb-3 mt-4" />
-  {description && <p class="pl-0.5 my-4 text-base/7 text-foreground">{description}</p>}
-  {
-    tags && (
-      <div class="mb-6">
-        <Tags tags={tags} />
+  <div class="flex flex-col md:flex-row gap-6">
+    {/* Image column - 320px fixed width on desktop */}
+    {
+      (postData.cardImage || postData.coverImage) && (
+        <div class="shrink-0 md:w-80">
+          <a href={articleLink} class="block">
+            <Image
+              src={postData.cardImage?.src || postData.coverImage.src}
+              alt={postData.cardImage?.alt || postData.coverImage.alt}
+              width={postData.cardImage?.width || postData.coverImage.width}
+              height={postData.cardImage?.height || postData.coverImage.height}
+              class="w-full h-80 rounded-xl hover:opacity-90 transition-opacity object-cover object-center"
+              loading="lazy"
+            />
+          </a>
+        </div>
+      )
+    }
+    
+    {/* Content column - takes remaining space */}
+    <div class="flex-1 min-w-0 flex flex-col">
+      <h1 class="mb-3 text-2xl text-heading1 font-semibold">
+        <a href={articleLink}>{post.data.title}</a>
+      </h1>
+      <PostInfo post={post} class="mb-3" />
+      {description && <p class="pl-0.5 my-4 text-base/7 text-foreground">{description}</p>}
+      {
+        tags && (
+          <div class="mb-4">
+            <Tags tags={tags} />
+          </div>
+        )
+      }
+      <div class="mt-auto">
+        <a class="button flex items-center pl-3.5!" href={articleLink}>
+          {samePage ? 'Continue' : 'Read'}
+          <IconChevronsRight class="size-5 ml-2" />
+        </a>
       </div>
-    )
-  }
-  <div>
-    <a class="button flex items-center pl-3.5!" href={articleLink}>
-      {samePage ? 'Continue' : 'Read'}
-      <IconChevronsRight class="size-5 ml-2" />
-    </a>
+    </div>
   </div>
 </article>

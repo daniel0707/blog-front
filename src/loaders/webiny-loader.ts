@@ -17,6 +17,7 @@ interface WebinyPost {
   postSeoHeadline: string | null
   postSeoDescription: string | null
   postHeadlineImage: string | null
+  postHeadlineImageSmall: string | null
   postHeadlineImageAltText: string | null
   postIsFeatured: boolean
   postWrittenDateTime: string | null
@@ -45,6 +46,7 @@ const LIST_POSTS_QUERY = `
         postSeoHeadline
         postSeoDescription
         postHeadlineImage
+        postHeadlineImageSmall
         postHeadlineImageAltText
         postIsFeatured
         postWrittenDateTime
@@ -259,8 +261,25 @@ async function transformPost(
       src: post.postHeadlineImage,
       alt: post.postHeadlineImageAltText || 'Cover image',
       // Use fetched dimensions or defaults
-      width: dimensions?.width || 1200,
-      height: dimensions?.height || 630,
+      width: dimensions?.width || 1440,
+      height: dimensions?.height || 480,
+    }
+  }
+
+  // Card image (small square for listings)
+  if (post.postHeadlineImageSmall) {
+    const fileId = extractFileId(post.postHeadlineImageSmall)
+    let dimensions: FileDimensions | null = null
+
+    if (fileId) {
+      dimensions = await fetchImageDimensions(fileId, fmEndpoint, token)
+    }
+
+    data.cardImage = {
+      src: post.postHeadlineImageSmall,
+      alt: post.postHeadlineImageAltText || 'Card image',
+      width: dimensions?.width || 320,
+      height: dimensions?.height || 320,
     }
   }
 
