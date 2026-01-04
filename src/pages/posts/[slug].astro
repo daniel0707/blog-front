@@ -67,8 +67,8 @@ if (postData.tags && postData.tags.length > 0) {
 ---
 
 <Layout
-  title={postData.title}
-  description={postData.description}
+  title={postData.seoTitle || postData.title}
+  description={postData.seoDescription || postData.description}
   author={postData.author}
   tags={postData.tags}
 >
