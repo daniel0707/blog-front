@@ -2,6 +2,8 @@
  * Utility functions for fetching author data from Webiny CMS
  */
 
+import { getWebinyConfig } from './env-config'
+
 interface WebinyAuthor {
   id: string
   entryId: string
@@ -36,19 +38,14 @@ const LIST_AUTHORS_QUERY = `
  * Fetch all authors from Webiny CMS
  */
 export async function fetchAuthors(): Promise<WebinyAuthor[]> {
-  const endpoint = import.meta.env.WEBINY_GRAPHQL_ENDPOINT
-  const token = import.meta.env.WEBINY_API_TOKEN
-
-  if (!endpoint || !token) {
-    throw new Error('Missing Webiny configuration. Check WEBINY_GRAPHQL_ENDPOINT and WEBINY_API_TOKEN environment variables.')
-  }
+  const { graphqlEndpoint, apiToken } = getWebinyConfig()
 
   try {
-    const response = await fetch(endpoint, {
+    const response = await fetch(graphqlEndpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${apiToken}`,
       },
       body: JSON.stringify({
         query: LIST_AUTHORS_QUERY,

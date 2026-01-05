@@ -1,9 +1,12 @@
 import type { SiteConfig } from '~/types'
+import { getSiteEnvConfig } from '~/utils/env-config'
+
+const { isProd } = getSiteEnvConfig()
 
 const config: SiteConfig = {
   // Absolute URL to the root of your published site, used for generating links and sitemaps.
   // Automatically switches between dev and prod based on build mode
-  site: import.meta.env.PROD ? 'https://blog.vahla.fi' : 'https://blog-dev.vahla.fi',
+  site: isProd ? 'https://blog.vahla.fi' : 'https://blog-dev.vahla.fi',
   // The name of your site, used in the title and for SEO.
   title: "Dan's Clever Corner",
   // The description of your site, used for SEO and RSS feed.

@@ -13,6 +13,7 @@ import {
   type ExpressiveCodeTheme,
 } from 'astro-expressive-code'
 import { getCollection, type CollectionEntry } from 'astro:content'
+import { getSiteEnvConfig } from './env-config'
 import Color from 'color'
 import { slug } from 'github-slugger'
 
@@ -215,8 +216,9 @@ export async function resolveThemeColorStyles(
 }
 
 export async function getSortedPosts() {
+  const { isProd } = getSiteEnvConfig()
   const allPosts = await getCollection('posts', ({ data }) => {
-    return import.meta.env.PROD ? data.draft !== true : true
+    return isProd ? data.draft !== true : true
   })
   const sortedPosts = allPosts.sort((a, b) => {
     return a.data.published < b.data.published ? -1 : 1

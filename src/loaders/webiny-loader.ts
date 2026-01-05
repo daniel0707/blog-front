@@ -1,5 +1,6 @@
 import type { Loader, LoaderContext } from 'astro/loaders'
 import crypto from 'node:crypto'
+import { getWebinyConfig } from '../utils/env-config'
 
 // Webiny post structure from GraphQL
 interface WebinyPostSection {
@@ -300,30 +301,13 @@ export function webinyLoader(): Loader {
     async load(context: LoaderContext): Promise<void> {
       const { store, logger, parseData } = context
 
-      // Get environment variables
-      const endpoint =
-        import.meta.env.WEBINY_GRAPHQL_ENDPOINT ||
-        process.env.WEBINY_GRAPHQL_ENDPOINT
-      const token =
-        import.meta.env.WEBINY_API_TOKEN || process.env.WEBINY_API_TOKEN
-
-      if (!endpoint || !token) {
-        logger.error(
-          'Missing Webiny configuration. Set WEBINY_GRAPHQL_ENDPOINT and WEBINY_API_TOKEN in .env'
-        )
-        return
-      }
-
-      // File Manager endpoint (typically same domain, /graphql)
-      const fmEndpoint =
-        import.meta.env.WEBINY_FILE_MANAGER_ENDPOINT ||
-        process.env.WEBINY_FILE_MANAGER_ENDPOINT ||
-        endpoint.replace(/\/cms\/read\/[^/]+$/, '/graphql')
-
-      logger.info('Fetching posts from Webiny CMS...')
-
       try {
-        const posts = await fetchWebinyPosts(endpoint, token)
+        // Get Webiny configuration
+        const { graphqlEndpoint, apiToken, fileManagerEndpoint } = getWebinyConfig()
+
+        logger.info('Fetching posts from Webiny CMS...')
+
+        const posts = await fetchWebinyPosts(graphqlEndpoint, apiToken)
         logger.info(`Fetched ${posts.length} posts from Webiny`)
 
         // Clear existing entries
@@ -331,7 +315,7 @@ export function webinyLoader(): Loader {
 
         // Transform and store each post
         for (const post of posts) {
-          const transformed = await transformPost(post, fmEndpoint, token)
+          const transformed = await transformPost(post, fileManagerEndpoint, apiToken)
 
           // Parse and validate data against schema
           const parsedData = await parseData({
@@ -362,6 +346,10 @@ export function webinyLoader(): Loader {
 
         logger.info(`Successfully loaded ${posts.length} posts`)
       } catch (error) {
+        if (error instanceof Error && error.message.includes('Missing Webiny configuration')) {
+          logger.error(error.message)
+          return
+        }
         logger.error(`Failed to fetch from Webiny: ${error}`)
         throw error
       }
