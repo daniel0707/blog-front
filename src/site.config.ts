@@ -1,5 +1,5 @@
 import type { SiteConfig } from '~/types'
-import { getSiteEnvConfig } from '~/utils/env-config'
+import { getSiteEnvConfig } from './utils/env-config'
 
 const { isProd } = getSiteEnvConfig()
 
