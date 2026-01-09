@@ -192,7 +192,8 @@ function transformSectionsToMarkdown(sections: WebinyPostSection[] | null): stri
       // Add section image at the end if present
       if (section.postSectionImage) {
         const alt = section.postSectionImageDescription || 'Section image'
-        content += `\n\n![${alt}](${section.postSectionImage})`
+        // Use title attribute to trigger figure/figcaption rendering (handled by rehype-title-figure plugin)
+        content += `\n\n![${alt}](${section.postSectionImage}${section.postSectionImageDescription ? ` "${section.postSectionImageDescription}"` : ''})`
       }
 
       return content.trim()
