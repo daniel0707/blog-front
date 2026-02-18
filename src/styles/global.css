@@ -31,11 +31,11 @@
 /* https://fontsource.org/fonts/jetbrains-mono/install */
 /* jetbrains-mono-latin-wght-normal */
 @font-face {
-  font-family: 'JetBrains Mono Variable';
+  font-family: 'Kantumruy Pro Variable';
   font-style: normal;
   font-display: swap;
   font-weight: 100 800;
-  src: url(@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2)
+  src: url(@fontsource-variable/kantumruy-pro/files/kantumruy-pro-latin-wght-normal.woff2)
     format('woff2-variations');
   unicode-range:
     U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308,
@@ -275,6 +275,14 @@ article img {
   aside,
   .github-card {
     @apply my-6.5;
+  }
+
+  p {
+    @apply text-justify;
+  }
+
+  &.prose-addendum p {
+    @apply text-center md:text-left;
   }
 
   b,

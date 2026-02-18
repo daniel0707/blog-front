@@ -5,6 +5,7 @@ import sitemap from '@astrojs/sitemap'
 import mdx from '@astrojs/mdx'
 import { rehypeHeadingIds } from '@astrojs/markdown-remark'
 import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+import rehypeNoHeadingLinks from './src/plugins/rehype-no-heading-links'
 import expressiveCode from 'astro-expressive-code'
 import siteConfig from './src/site.config'
 import { pluginLineNumbers } from '@expressive-code/plugin-line-numbers'
@@ -38,6 +39,7 @@ export default defineConfig({
     rehypePlugins: [
       [rehypeHeadingIds, { headingIdCompat: true }],
       [rehypeAutolinkHeadings, { behavior: 'wrap' }],
+      rehypeNoHeadingLinks,
       rehypeTitleFigure,
       [
         rehypeExternalLinks,

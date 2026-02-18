@@ -32,6 +32,22 @@ export const getStaticPaths = (async () => {
 const { post, prev, next } = Astro.props
 const postData = post.data
 const { headings, Content: PostContent } = await render(post)
+// Responsive cover image srcset generation using Webiny File Manager resize param
+// Define small/medium/full candidate groups so mobile devices use the small group
+const coverWidths = [100, 300, 500, 750, 1000, 1500, 2500]
+const smallWidths = [100, 300, 500]
+const mediumWidths = [500, 750, 1000]
+const coverSrcset = postData.coverImage
+  ? coverWidths.map((w) => `${postData!.coverImage!.src}?width=${w} ${w}w`).join(', ')
+  : undefined
+const smallSrcset = postData.coverImage
+  ? smallWidths.map((w) => `${postData!.coverImage!.src}?width=${w} ${w}w`).join(', ')
+  : undefined
+const mediumSrcset = postData.coverImage
+  ? mediumWidths.map((w) => `${postData!.coverImage!.src}?width=${w} ${w}w`).join(', ')
+  : undefined
+// sizes: use explicit CSS pixel widths matching the content layout so browser picks appropriately
+const coverSizes = '(max-width: 640px) calc(100vw - 2rem), (max-width: 1024px) 720px, 1280px'
 const addendum = await getCollection('addendum')
 let AddendumContent
 let addendumAvatarImage
@@ -75,15 +91,30 @@ if (postData.tags && postData.tags.length > 0) {
   <article class="max-w-full py-7.5" data-pagefind-body>
     {
       postData.coverImage && (
-        <Image
-          priority
-          layout="constrained"
-          src={postData.coverImage.src}
-          alt={postData.coverImage.alt}
-          width={postData.coverImage.width}
-          height={postData.coverImage.height}
-          class="w-full max-h-120 rounded-xl mb-5 object-cover object-center"
-        />
+        <picture>
+          <source
+            media="(max-width: 640px)"
+            srcset={smallSrcset}
+            sizes="calc(100vw - 2rem)"
+          />
+          <source
+            media="(max-width: 1024px)"
+            srcset={mediumSrcset}
+            sizes="720px"
+          />
+          <img
+            src={`${postData.coverImage.src}?width=1000`}
+            srcset={coverSrcset}
+            sizes={coverSizes}
+            alt={postData.coverImage.alt}
+            width={postData.coverImage.width}
+            height={postData.coverImage.height}
+            class="w-full max-h-120 rounded-xl mb-5 object-cover object-center"
+            loading="eager"
+            decoding="sync"
+            fetchpriority="high"
+          />
+        </picture>
       )
     }
     <div class="md:mx-2">
@@ -102,7 +133,7 @@ if (postData.tags && postData.tags.length > 0) {
       </div>
     </div>
     <!-- <hr class="border-accent/10 border-2 rounded-xl hidden lg:block" /> -->
-    <div class="flex flex-col xl:gap-1 2xl:gap-18 xl:flex-row xl:items-start">
+    <div class="flex flex-col xl:gap-1 xl:flex-row xl:items-start">
       {postData.toc && headings.length > 0 && <TableOfContents headings={headings} />}
       <div class="mb-5 xl:min-w-full 2xl:min-w-full prose">
         <PostContent />

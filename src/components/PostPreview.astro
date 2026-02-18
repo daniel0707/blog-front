@@ -23,7 +23,7 @@ if (post.data.tags && post.data.tags.length > 0) {
 }
 const samePage = Astro.url.pathname === `/posts/${post.id}`
 const articleLink = samePage ? `#${post.id}` : `/posts/${post.id}`
-const postData = post.data as any
+const postData = post.data
 ---
 
 <article class="w-full py-5 my-1 md:my-4 border-accent/10">
@@ -34,11 +34,11 @@ const postData = post.data as any
         <div class="shrink-0 md:w-80">
           <a href={articleLink} class="block">
             <Image
-              src={postData.cardImage?.src || postData.coverImage.src}
-              alt={postData.cardImage?.alt || postData.coverImage.alt}
-              width={postData.cardImage?.width || postData.coverImage.width}
-              height={postData.cardImage?.height || postData.coverImage.height}
-              class="w-full h-80 rounded-xl hover:opacity-90 transition-opacity object-cover object-center"
+              src={postData.cardImage!.src!}
+              alt={postData.cardImage!.alt}
+              width={postData.cardImage!.width!} 
+              height={postData.cardImage!.height!}
+              class="w-full h-40 md:h-80 rounded-xl hover:opacity-90 transition-opacity object-cover object-center"
               loading="lazy"
             />
           </a>
@@ -52,7 +52,7 @@ const postData = post.data as any
         <a href={articleLink}>{post.data.title}</a>
       </h1>
       <PostInfo post={post} class="mb-3" />
-      {description && <p class="pl-0.5 my-4 text-base/7 text-foreground">{description}</p>}
+      {description && <p class="pl-0.5 my-4 text-base/7 text-foreground text-justify">{description}</p>}
       {
         tags && (
           <div class="mb-4">
