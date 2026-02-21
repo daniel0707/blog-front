@@ -184,3 +184,69 @@ if (postData.tags && postData.tags.length > 0) {
   }
   <ScrollUpButton />
 </Layout>
+
+<style is:global>
+  article[data-pagefind-body] img[data-lightbox] {
+    cursor: zoom-in;
+  }
+
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(6px);
+    cursor: zoom-out;
+    padding: 1rem;
+  }
+
+  .lightbox-overlay img {
+    max-width: 100vw;
+    max-height: 100vh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border: none !important;
+    cursor: zoom-out;
+    box-shadow: 0 0 60px rgba(0, 0, 0, 0.6);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const article = document.querySelector('article[data-pagefind-body]')
+    if (!article) return
+
+    const imgs = Array.from(article.querySelectorAll('img'))
+      .slice(1) // skip the cover/banner image
+      .filter((img) => !img.classList.contains('character-dialogue-image'))
+
+    imgs.forEach((img) => {
+      img.dataset.lightbox = ''
+      img.addEventListener('click', () => {
+        const overlay = document.createElement('div')
+        overlay.className = 'lightbox-overlay'
+
+        const clone = new Image()
+        clone.src = img.src.replace(/[?&]width=\d+/, '')
+        clone.alt = img.alt
+
+        overlay.append(clone)
+        document.body.append(overlay)
+
+        const dismiss = () => overlay.remove()
+        overlay.addEventListener('click', dismiss)
+
+        document.addEventListener('keydown', function onKey(e) {
+          if (e.key === 'Escape') {
+            dismiss()
+            document.removeEventListener('keydown', onKey)
+          }
+        }, { once: true })
+      })
+    })
+  })
+</script>

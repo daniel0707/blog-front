@@ -364,7 +364,7 @@ article img {
     @apply bg-foreground/7;
 
     &.character-dialogue {
-      @apply sm:bg-transparent flex items-center sm:items-start justify-center sm:justify-start gap-3 py-4 px-2 md:px-5;
+      @apply sm:bg-transparent flex items-center sm:items-start justify-start gap-3 py-4 px-2 md:px-5;
 
       &:has(+ aside.character-dialogue) {
         @apply mb-4 sm:mb-0 sm:pb-0;
