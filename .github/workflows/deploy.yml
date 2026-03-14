@@ -42,6 +42,9 @@ jobs:
         env:
           WEBINY_GRAPHQL_ENDPOINT: ${{ secrets.WEBINY_GRAPHQL_ENDPOINT }}
           WEBINY_API_TOKEN: ${{ secrets.WEBINY_API_TOKEN }}
+          # SITE_URL must be set as a per-environment variable in GitHub (Settings → Environments)
+          # so each environment builds with its own canonical URL for OG/sitemap/RSS links.
+          SITE_URL: ${{ vars.SITE_URL }}
         run: npm run build
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f # v3.9.0

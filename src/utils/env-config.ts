@@ -58,6 +58,10 @@ export interface SiteEnvConfig {
   isProd: boolean
   isDev: boolean
   baseUrl: string
+  // The canonical URL for this specific deployment, used for OG tags, sitemap,
+  // and RSS. Set via the SITE_URL GitHub environment variable (one value per
+  // environment) so dev/prod each build with their own correct URL.
+  deploymentUrl: string | undefined
 }
 
 /**
@@ -67,10 +71,14 @@ export function getSiteEnvConfig(): SiteEnvConfig {
   const isProd = getEnvVar('PROD') === 'true' || getEnvVar('NODE_ENV') === 'production'
   const isDev = !isProd
   const baseUrl = getEnvVar('BASE_URL') || '/'
+  // SITE_URL is set as a per-environment variable in GitHub
+  // (Settings → Environments → dev/prod → Environment variables).
+  const deploymentUrl = getEnvVar('SITE_URL')
 
   return {
     isProd,
     isDev,
     baseUrl,
+    deploymentUrl,
   }
 }

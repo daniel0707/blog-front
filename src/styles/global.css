@@ -357,7 +357,7 @@ article img {
   }
 
   blockquote {
-    @apply relative bg-foreground/5 before:content-['>'] before:block before:absolute before:text-accent before:font-bold before:left-3;
+    @apply relative w-fit bg-foreground/5 before:content-['“'] after:content-['„'] after:block after:absolute after:right-2 after:bottom-2 after:text-accent after:font-bold after:text-3xl before:block before:absolute before:text-accent before:font-bold before:text-3xl before:left-2 before:top-2;
   }
 
   aside {

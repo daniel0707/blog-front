@@ -1,12 +1,13 @@
 import type { SiteConfig } from '~/types'
 import { getSiteEnvConfig } from './utils/env-config'
 
-const { isProd } = getSiteEnvConfig()
+const { isProd, deploymentUrl } = getSiteEnvConfig()
 
 const config: SiteConfig = {
   // Absolute URL to the root of your published site, used for generating links and sitemaps.
-  // Automatically switches between dev and prod based on build mode
-  site: isProd ? 'https://blog.vahla.fi' : 'https://blog-dev.vahla.fi',
+  // Reads SITE_URL from the GitHub environment variable (set per environment in
+  // GitHub Settings → Environments). Falls back to the hardcoded URL for local dev.
+  site: deploymentUrl ?? (isProd ? 'https://blog.vahla.fi' : 'https://blog-dev.vahla.fi'),
   // The name of your site, used in the title and for SEO.
   title: "Dan's Clever Corner",
   // The description of your site, used for SEO and RSS feed.
